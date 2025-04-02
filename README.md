@@ -470,7 +470,7 @@ module "example" {
   restricted_countries             = ["GB"]
   include_unknown_countries        = false
   restricted_locations             = {
-    "IGW AWS Outbound" = "location"
+    "Example" = "location"
   }
   
   # Session Lifetime
