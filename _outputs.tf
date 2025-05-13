@@ -271,7 +271,7 @@ output "administrative_units" {
 # ---------------------------------------------------------
 
 locals {
-  group_types = ["TEAM", "DYN", "PERM", "APP", "AWS"]
+  group_types = ["TEAM", "DYN", "PERM", "APP"]
 }
 
 output "all_groups" {
@@ -279,7 +279,7 @@ output "all_groups" {
 }
 
 output "groups" {
-  value = { for gt in local.group_types : gt => [ for gkey, gvalue in var.groups : gvalue.type == "DYN" ? azuread_group.groups-dynamic[gkey] : azuread_group.groups-static[gkey] if gvalue.type == gt ] }
+  value = { for gt in local.group_types : gt => [ for gkey, gvalue in var.groups : try(local.all_groups[gkey], null) if gvalue.type == gt ] }
 }
 
 # ---------------------------------------------------------
