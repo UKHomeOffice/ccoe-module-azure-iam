@@ -271,7 +271,7 @@ output "administrative_units" {
 # ---------------------------------------------------------
 
 locals {
-  group_types = ["TEAM", "DYN", "PERM", "APP", "AWS"]
+  group_types = ["TEAM", "DYN", "PERM", "APP"]
 }
 
 output "all_groups" {
