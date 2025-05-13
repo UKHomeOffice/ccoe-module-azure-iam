@@ -40,19 +40,11 @@ resource "azuread_directory_role_assignment" "permanent-role-assignment" {
 # PIM
 # ---------------------------------------------------------
 
-# The below does not work properly, see - 
+resource "azuread_directory_role_eligibility_schedule_request" "pim-role-assignment" {
+  for_each = local.all_pim_role_assignments
 
-# https://github.com/hashicorp/terraform-provider-azuread/issues/1234
-# and!
-# https://github.com/hashicorp/terraform-provider-azuread/issues/1306
-# and!
-# https://github.com/hashicorp/terraform-provider-azuread/issues/1386
-
-# resource "azuread_directory_role_eligibility_schedule_request" "pim-role-assignment" {
-#   for_each = local.all_pim_role_assignments
-
-#   role_definition_id = azuread_directory_role.roles[each.value.role].template_id
-#   principal_id       = each.value.type == "id" ? each.value.principal : endswith(each.value.type, "_tf") ? local.all_tf_resources[each.value.type][each.value.principal] : local.all_users_guests_groups_sps[each.value.principal].id
-#   directory_scope_id = "/"
-#   justification      = "Assigned via IAM Azure Terraform - see code for details."
-# }
+  role_definition_id = azuread_directory_role.roles[each.value.role].template_id
+  principal_id       = each.value.type == "id" ? each.value.principal : endswith(each.value.type, "_tf") ? local.all_tf_resources[each.value.type][each.value.principal] : local.all_users_guests_groups_sps[each.value.principal].id
+  directory_scope_id = "/"
+  justification      = "Assigned via IAM Azure Terraform - see code for details."
+}

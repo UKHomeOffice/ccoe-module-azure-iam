@@ -72,14 +72,65 @@ resource "azuread_directory_role_assignment" "topleveladmin-globalreader" {
 }
 
 # ---------------------------------------------------------
-# Delegate Global Administrator Role
+# Delegate Permanent Roles
 # ---------------------------------------------------------
 
+# Global Administrator
 resource "azuread_directory_role_assignment" "topleveladmin-globaladministrator" {
   for_each = { for k, v in var.top_level_admins : k => v if v.global_administrator && v.is_pim == false } # Only delegate if global_administrator = true
 
   role_id             = azuread_directory_role.global-administrator.template_id
   principal_object_id = azuread_user.topleveladmin-users[each.key].object_id
+}
+
+# Privileged Authentication Administrator
+resource "azuread_directory_role_assignment" "topleveladmin-privauthadministrator" {
+  for_each = { for k, v in var.top_level_admins : k => v if v.priv_auth_administrator && v.is_pim == false } # Only delegate if priv_auth_administrator = true
+
+  role_id             = azuread_directory_role.privileged-authentication-administrator.template_id
+  principal_object_id = azuread_user.topleveladmin-users[each.key].object_id
+}
+
+# Privileged Role Administrator
+resource "azuread_directory_role_assignment" "topleveladmin-privroleadministrator" {
+  for_each = { for k, v in var.top_level_admins : k => v if v.priv_role_administrator && v.is_pim == false } # Only delegate if priv_role_administrator = true
+
+  role_id             = azuread_directory_role.privileged-role-administrator.template_id
+  principal_object_id = azuread_user.topleveladmin-users[each.key].object_id
+}
+
+# ---------------------------------------------------------
+# Delegate PIM Roles
+# ---------------------------------------------------------
+
+# Global Administrator
+resource "azuread_directory_role_eligibility_schedule_request" "topleveladmin-globaladministrator" {
+  for_each = { for k, v in var.top_level_admins : k => v if v.global_administrator && v.is_pim == true } # Only delegate if global_administrator = true
+
+  role_definition_id = azuread_directory_role.global-administrator.template_id
+  principal_id       = azuread_user.topleveladmin-users[each.key].object_id
+  directory_scope_id = "/"
+  justification      = "Assigned via IAM Azure Terraform - see code for details."
+}
+
+# Privileged Authentication Administrator
+resource "azuread_directory_role_eligibility_schedule_request" "topleveladmin-privauthadministrator" {
+  for_each = { for k, v in var.top_level_admins : k => v if v.priv_auth_administrator && v.is_pim == true } # Only delegate if priv_auth_administrator = true
+
+  role_definition_id = azuread_directory_role.privileged-authentication-administrator.template_id
+  principal_id       = azuread_user.topleveladmin-users[each.key].object_id
+  directory_scope_id = "/"
+  justification      = "Assigned via IAM Azure Terraform - see code for details."
+}
+
+# Privileged Role Administrator
+resource "azuread_directory_role_eligibility_schedule_request" "topleveladmin-privroleadministrator" {
+  for_each = { for k, v in var.top_level_admins : k => v if v.priv_role_administrator && v.is_pim == true } # Only delegate if priv_role_administrator = true
+
+  role_definition_id = azuread_directory_role.privileged-role-administrator.template_id
+  principal_id       = azuread_user.topleveladmin-users[each.key].object_id
+  directory_scope_id = "/"
+  justification      = "Assigned via IAM Azure Terraform - see code for details."
 }
 
 # ---------------------------------------------------------

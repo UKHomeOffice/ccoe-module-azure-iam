@@ -73,6 +73,8 @@ variable "top_level_admins" {
     last_name                    = string
     usage_location               = string
     global_administrator         = bool
+    priv_role_administrator      = bool
+    priv_auth_administrator      = bool
     azure_root_administrator     = bool
     is_pim                       = optional(bool, true)
   }))
@@ -319,11 +321,10 @@ variable "role_assignments_permanent" {
   description = "Permanent role assignments."
   nullable    = true
 
-  # This is temporarily disabled as PIM is not properly supported in the Terraform AzureAD provider
-  # validation {
-  #   condition     = alltrue([for role, assignments in var.role_assignments_permanent : strcontains(role, "Reader")])
-  #   error_message = "Permant role assignments MUST contain Reader only"
-  # }
+  validation {
+    condition     = alltrue([for role, assignments in var.role_assignments_permanent : !contains(["Global Administrator", "Privileged Role Administrator", "Privileged Authentication Administrator"], role)])
+    error_message = "Role CANNOT be [Global Administrator, Privileged Role Administrator, Privileged Authentication Administrator]"
+  }
 
   validation {
     condition     = alltrue(flatten([for rakey, ravalue in var.role_assignments_permanent : flatten([for v in ravalue : contains(["user", "guest", "guest_tf", "group", "group_tf", "service_principal", "service_principal_tf", "id"], v)])]))
