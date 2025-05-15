@@ -22,7 +22,7 @@ locals {
   high_priv_roles_ids              = join(",", concat([for v in data.azurerm_role_definition.high-privilege : basename(v.id)], [ for role in local.high_priv_roles_custom : azurerm_role_definition.azure-platform-roles[role].role_definition_id ]))
   high_priv_role_condition_version = "2.0"
   # The below condition allows assignment of ANY role EXCEPT the high privilege roles specified above
-  high_priv_role_condition = <<EOT
+  high_priv_role_condition = <<-EOT
   (
   (
     !(ActionMatches{'Microsoft.Authorization/roleAssignments/write'})
