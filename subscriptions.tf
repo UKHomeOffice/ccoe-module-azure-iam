@@ -18,14 +18,6 @@ resource "azurerm_subscription" "subscriptions" {
   lifecycle {
     ignore_changes = [tags]
   }
-
-  # provisioner "local-exec" {
-  #   # This is really important as it ensures the subscription creation waits until the corresponding alias
-  #   # is also created. This is needed for the subsequent role assignment on the alias.
-  #   # Without this, errors will happen.
-  #   command     = "az account alias wait --name \"${each.key}\" --created"
-  #   interpreter = ["bash", "-c"]
-  # }
 }
 
 # ---------------------------------------------------------
@@ -44,14 +36,6 @@ resource "azurerm_subscription" "existing-subscriptions" {
   lifecycle {
     ignore_changes = [tags]
   }
-
-  # provisioner "local-exec" {
-  #   # This is really important as it ensures the subscription creation waits until the corresponding alias
-  #   # is also created. This is needed for the subsequent role assignment on the alias.
-  #   # Without this, errors will happen.
-  #   command     = "az account alias wait --name \"${each.key}\" --created"
-  #   interpreter = ["bash", "-c"]
-  # }
 }
 
 # ---------------------------------------------------------
