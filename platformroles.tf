@@ -4,6 +4,14 @@
 
 locals{
   azure_platform_roles = {
+    "Approver" = {
+      description = "Approvers for the assigned resource. Allows visibility of role assignments."
+      high_priv   = true
+      actions     = [
+        "Microsoft.Authorization/roleAssignments/read"
+      ]
+      not_actions = []
+    }
     "Admin" = {
       description = "Top level Azure platform administration."
       high_priv   = true
@@ -81,7 +89,7 @@ locals{
 resource "azurerm_role_definition" "azure-platform-roles" {
   for_each = local.azure_platform_roles
 
-  name        = "${var.prefix} Platform ${each.key}"
+  name        = each.key == "Approver" ? each.key : "${var.prefix} Platform ${each.key}" # Exclude "Approver" role from naming convention
   scope       = local.tenant_root_mgmt_group
   description = each.value.description
 
