@@ -197,7 +197,7 @@ data "azurerm_billing_enrollment_account_scope" "enrollment-account" {
 }
 
 module "example" {
-  source = "github.com/UKHomeOffice/ccoe-module-iam-azure?ref=v1.2.1"
+  source = "github.com/UKHomeOffice/ccoe-module-iam-azure?ref=v1.3.0"
 
   # ---------------------------------------------------------
   # General
