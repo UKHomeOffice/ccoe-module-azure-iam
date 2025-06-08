@@ -58,8 +58,68 @@ The Powershell command is:
 New-AzRoleAssignment -Scope "/providers/Microsoft.Subscription/" -RoleDefinitionName "User Access Administrator" -ObjectId <principal object ID>
 ```
 
-## Splitting Up Files
-As your environment grows it will become desirable to split up the variables into multiple files rather than declaring everything in a single file.
+## Using YAML Variables (Recommended)
+The recommended way to run this module is to use YAML `.yml` files to declare variables and pass your configuration.
+
+This provides two major benefits:
+1. Clear and structured files following a simple and well known pattern
+2. Easier integration and automation possibilities. e.g non human updating of variable files
+
+In order to use YAML you should first setup a standard HCL `.tf` file from which you can call the module and pass in the YAML variables.
+
+It is recommended to name the file to match your tenant name and prefix with an underscore e.g `_tenantname.tf`.
+
+Within this file you can then add the following outside of the module block:
+
+```hcl
+locals {
+  user_sets = indent(2, format("user_sets:\n%s\n%s", [ for file in fileset(path.module, "user-sets*.yml") : file(file) ]...))
+  files = { for type in ["subscriptions", "groups", "appregs-serviceprincipals", "managementgroups", "guests", "roles-perm", "roles-pim", "locations", "administrativeunits", "rolemgmtpolicies-azure", "rolemgmtpolicies-groups", "conditionalaccess"] : type => { for k, v in merge([ for file in fileset(path.module, "${type}*.yml") : yamldecode(format("%s\n%s", local.user_sets, file(file))) ]...) : k => v if k != "user_sets"}  }
+}
+```
+
+This code block will automatically discover new `.yml` files prefixed with the following names:
+
+- `subscriptions`
+- `groups`
+- `appregs-serviceprincipals`
+- `managementgroups`
+- `guests`
+- `roles-perm`
+- `roles-pim`
+- `locations`
+- `administrativeunits`
+- `rolemgmtpolicies-azure`
+- `rolemgmtpolicies-groups`
+- `conditionalaccess`
+
+And subsequently generate a variable for each containing an interpolated HCL interpretation of the content.
+
+For example, if you used the following file structure:
+
+```bash
+.
+├── _tenantname.tf
+├── subscriptions-dept1.yml
+├── subscriptions-dept2.yml
+├── groups-dept1.yml
+├── groups-dept2.yml
+```
+
+The result would be `local.files.groups` and `local.files.subscriptions` each containing a complete version of all `groups` and `subscriptions` files respectively and including interpolation of any user sets.
+
+The variables can then be passed directly to the module inputs, e.g:
+
+```hcl
+# ---------------------------------------------------------
+# Groups
+# ---------------------------------------------------------
+
+groups = local.files.groups
+```
+
+## Using HCL Variables
+Although the recommended way to run this module is using YAML variable definitions and splitting up variable types by files, it is also possible to structure your variables using native HCL and split files out.
 
 For example you may wish to structure your variables like this:
 
@@ -136,7 +196,51 @@ Currently this is not possible natively in Entra, as in, service principals cann
 
 This module has developed a workaround for this through the use of "Local User Sets".
 
-Effectively this allows you to create Terraform `locals` containing users which can then be referenced in multiple places throughout the module, e.g group ownership & service principal ownership.
+Effectively this allows you to define a set of users once which can then be referenced in multiple places throughout the module, e.g group ownership & service principal ownership.
+
+> It is also possible to add service principals alongside user principals within user sets.
+
+Working with user sets is slightly different depending on if you are declaring variables as YAML or HCL:
+
+### YAML
+If using YAML and the recommended way of defining variables as set out earlier in this `README` then you can define user sets by creating `.yml` files prefixed with the name `user-sets`, for example `user-sets-teams.yml`.
+
+The following is an example of the structure within the files:
+
+```yaml
+"CloudPlatformTeam": &CloudPlatformTeam
+  "user1@internal.example.com": "user"
+  "user2@external.example.com": "guest"
+  "user3@internal.example.com": "user"
+```
+
+> NOTE: The `&CloudPlatformTeam` is **required** as it denotes a YAML anchor.
+
+You can then use the user set like so:
+
+```yaml
+"Group1":
+  "name": "Group1"
+  "type": "TEAM"
+  "owners": 
+    <<: *CloudPlatformTeam
+```
+
+The above example is a group, however it could also be used for a subscription and added alongside existing users:
+
+```yaml
+"Subscription1":
+  "name": "Subscription1"
+  "management_group_id": "Tier2"
+  "delegations":
+    "Owner":
+      "objects":
+        <<: *CloudPlatformTeam
+        "user4@external.example.com": "guest"
+```
+
+### HCL
+HCL is the native Terraform configuration language and can therefore use Terraform builtin features including `locals` and `merge()`.
 
 For example, you could create a file called `locals.tf` with the following content:
 
@@ -164,21 +268,21 @@ groups = {
 }
 ```
 
-And additionally like this when creating an app registration / service principal:
+And additionally like this when creating an app registration / service principal alongside existing owners:
 
 ```hcl
 app_registrations_service_principals = {
   "Example" = {
     display_name = "Example"
     requires_service_principal = true
-    owners = local.teams.CloudPlatformTeam
+    owners = merge(local.teams.CloudPlatformTeam, {
+      "user4@external.example.com" = "guest"
+    })
   }    
 }
 ```
 
 This will then ensure that both the group and app registration / service principal are owned by the same set of users which can be managed centrally through the `locals`.
-
-It is also possible to add service principals alongside user principals within the `locals`.
 
 ## PIM
 PIM support in this module is currently limited, this is due to the currently poor support within the `azuread` Terraform provider for PIM.
@@ -197,7 +301,7 @@ data "azurerm_billing_enrollment_account_scope" "enrollment-account" {
 }
 
 module "example" {
-  source = "github.com/UKHomeOffice/ccoe-module-iam-azure?ref=v1.3.1"
+  source = "github.com/UKHomeOffice/ccoe-module-iam-azure?ref=v1.3.2"
 
   # ---------------------------------------------------------
   # General
