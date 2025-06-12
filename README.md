@@ -73,7 +73,7 @@ Within this file you can then add the following outside of the module block:
 
 ```hcl
 locals {
-  user_sets = indent(2, format("user_sets:\n%s\n%s", [ for file in fileset(path.module, "user-sets*.yml") : file(file) ]...))
+  user_sets = indent(2, format("user_sets:\n%s", join("\n", [ for file in fileset(path.module, "user-sets*.yml") : file(file) ])))
   files = { for type in ["subscriptions", "groups", "appregs-serviceprincipals", "managementgroups", "guests", "roles-perm", "roles-pim", "locations", "administrativeunits", "rolemgmtpolicies-azure", "rolemgmtpolicies-groups", "conditionalaccess"] : type => { for k, v in merge([ for file in fileset(path.module, "${type}*.yml") : yamldecode(format("%s\n%s", local.user_sets, file(file))) ]...) : k => v if k != "user_sets"}  }
 }
 ```
