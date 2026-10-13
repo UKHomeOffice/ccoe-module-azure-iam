@@ -2,12 +2,12 @@
 # AZURE PLATFORM ROLES
 # *********************************************************
 
-locals{
+locals {
   azure_platform_roles = {
     "Approver" = {
       description = "Approvers for the assigned resource. Allows visibility of role assignments."
       high_priv   = true
-      actions     = [
+      actions = [
         "Microsoft.Authorization/roleAssignments/read"
       ]
       not_actions = []
@@ -15,7 +15,7 @@ locals{
     "Admin" = {
       description = "Top level Azure platform administration."
       high_priv   = true
-      actions     = [
+      actions = [
         # User Access Admin Role
         "*/read",
         "Microsoft.Authorization/*",
@@ -30,7 +30,7 @@ locals{
     "Support" = {
       description = "Top level Azure platform support."
       high_priv   = true
-      actions     = [
+      actions = [
         # User Access Admin Role
         "*/read",
         "Microsoft.Authorization/*",
@@ -41,7 +41,7 @@ locals{
     "FinOps" = {
       description = "Top level Azure platform FinOps."
       high_priv   = false
-      actions     = [
+      actions = [
         # Advisor Recommendations Contributor (Assessments and Reviews)
         "Microsoft.Advisor/recommendations/read",
         "Microsoft.Advisor/recommendations/write",
@@ -53,14 +53,15 @@ locals{
         "Microsoft.Consumption/*/read",
         "Microsoft.Management/managementGroups/read",
         "Microsoft.CostManagement/*/read",
-        "Microsoft.Support/*"        
+        "Microsoft.Support/*",
+        "Microsoft.Capacity/register/action"
       ]
       not_actions = []
     }
     "Security" = {
       description = "Top level Azure platform security."
       high_priv   = false
-      actions     = [
+      actions = [
         # Security Admin (excluding policy)
         "Microsoft.Authorization/*/read",
         # "Microsoft.Authorization/policyAssignments/*",
